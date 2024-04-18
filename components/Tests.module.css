@@ -1,0 +1,9 @@
+.container :global(.spinner-border) {
+    height: 16px;
+    width: 16px;
+    --bs-spinner-border-width: 2px;
+}
+
+.container :global(.accordion-button:not(.text-danger)::after) {
+    width: 0;
+}

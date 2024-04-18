@@ -1,0 +1,7 @@
+.content {
+    height: calc(100vh - 56px);
+}
+
+.content :global(.card-header .nav-item:first-child > .nav-link) {
+    border-top-left-radius: var(--bs-border-radius) !important;
+}
