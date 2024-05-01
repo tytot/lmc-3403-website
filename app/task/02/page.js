@@ -19,9 +19,9 @@ export default function Task2() {
                 updated shopping cart.
             </p>
             <p>
-                Assume that <code>cart</code>
-                (an array of items that represents the shopping cart) may or may not be defined in the global scope. If
-                it is not, the returned value will be used to initialize <code>card</code> globally.
+                Assume that <code>cart</code> (an array of items that represents the shopping cart) may or may not be
+                defined in the global scope. If it is not, the returned value will be used to initialize{' '}
+                <code>cart</code> globally.
             </p>
             <p>
                 You have written code that seems correct to you, but it is failing some tests. Use ChatGPT to help you
@@ -102,7 +102,7 @@ console.log('Cart:', currentCart);`
                 shopping cart. Each item will have the type <code>&#123; name: string, price: number &#125;</code>. The
                 method should return the updated shopping cart. Also, I was told to assume that <code>cart</code> may or
                 may not be defined in the global scope. If it is not, the returned value will be used to initialize{' '}
-                <code>card</code> globally.
+                <code>cart</code> globally.
             </p>
             <pre>{initialCode}</pre>
             <p>It is failing the following test:</p>
