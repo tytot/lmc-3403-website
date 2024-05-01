@@ -19,7 +19,7 @@ export default function Navbar() {
                 <div className="collapse navbar-collapse" id="navbarSupportedContent">
                     <ul className="navbar-nav me-auto mb-2 mb-lg-0">
                         <li className="nav-item">
-                            <a className="nav-link active" aria-current="page" href="/">
+                            <a className="nav-link" href="/">
                                 Home
                             </a>
                         </li>
@@ -29,13 +29,8 @@ export default function Navbar() {
                             </a>
                         </li>
                         <li className="nav-item">
-                            <a className="nav-link disabled" href="/task/02" aria-disabled="true">
+                            <a className="nav-link" href="/task/02">
                                 Task 2
-                            </a>
-                        </li>
-                        <li className="nav-item">
-                            <a className="nav-link disabled" href="/task/03" aria-disabled="true">
-                                Task 3
                             </a>
                         </li>
                     </ul>

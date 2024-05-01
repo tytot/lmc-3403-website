@@ -11,11 +11,8 @@ export default function Home() {
                     <a className="btn btn-primary" type="button" href="/task/01">
                         Task 1 (Algorithm Implementation)
                     </a>
-                    <a className="btn btn-primary disabled" type="button" href="/task/02" aria-disabled="true">
-                        Task 2
-                    </a>
-                    <a className="btn btn-primary disabled" type="button" href="/task/03" aria-disabled="true">
-                        Task 3
+                    <a className="btn btn-primary" type="button" href="/task/02">
+                        Task 2 (Debugging)
                     </a>
                 </div>
             </div>

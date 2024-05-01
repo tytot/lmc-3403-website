@@ -5,33 +5,64 @@ import { useRef, useState } from 'react'
 import Tests from '@/components/Tests'
 import { useRouter } from 'next/navigation'
 
-const STAGES = {
-    CHATTING: 0,
-    PASTING: 1,
-    PASTED: 2,
-    TESTING: 3,
-    FIXING: 4,
-    FIXED: 5,
-    TESTING_AGAIN: 6,
+export const STEP_TYPES = {
+    PROMPT: 0,
+    PASTE: 1,
+    TEST: 2,
+    FIX: 3,
+    HELP: 4,
 }
 
 export default function Task({
     options: {
+        steps,
+        title,
         description,
+        pasteButtonText,
         initialCode,
-        chatGPTCode,
-        correctCode,
-        response,
-        tests,
+        language,
         helpDialogContent,
         completeDialogContent,
     },
 }) {
     const router = useRouter()
     const editorRef = useRef(null)
-    const [completeModal, setCompleteModal] = useState()
     const [tab, setTab] = useState(0)
-    const [stage, setStage] = useState(STAGES.CHATTING)
+    const [stepIndex, setStepIndex] = useState(0)
+    const [messages, setMessages] = useState(
+        steps[0].type === STEP_TYPES.PROMPT ? [steps[0].question, steps[0].answer] : []
+    )
+    const [code, setCode] = useState(initialCode)
+    const [testsIndex, setTestsIndex] = useState(0)
+    const [tests, setTests] = useState(null)
+    const [didTest, setDidTest] = useState(false)
+
+    function goToNextStep() {
+        if (stepIndex + 1 >= steps.length) {
+            const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('complete-dialog'))
+            setTimeout(() => modal.show(), 1000)
+        } else {
+            const step = steps[stepIndex]
+            if (step.type === STEP_TYPES.PASTE) {
+                editorRef.current.setValue(step.value)
+                setCode(step.value)
+            } else if (step.type === STEP_TYPES.FIX) {
+                setCode(step.value)
+            } else if (step.type === STEP_TYPES.HELP) {
+                bootstrap.Modal.getInstance(document.getElementById('help-dialog')).hide()
+            }
+            const nextStep = steps[stepIndex + 1]
+            if (nextStep.type === STEP_TYPES.PROMPT) {
+                setMessages([...messages, nextStep.question, nextStep.answer])
+            } else if (nextStep.type === STEP_TYPES.HELP) {
+                const modal = bootstrap.Modal.getOrCreateInstance(document.getElementById('help-dialog'))
+                modal.show()
+            } else if (nextStep.type === STEP_TYPES.TEST) {
+                setDidTest(false)
+            }
+            setStepIndex(stepIndex + 1)
+        }
+    }
 
     function handleEditorDidMount(editor, _, callback) {
         editorRef.current = editor
@@ -39,6 +70,8 @@ export default function Task({
             callback()
         }
     }
+
+    const step = steps[stepIndex]
 
     const content = (
         <div className={`${styles.content} row gx-3 p-3`}>
@@ -48,7 +81,7 @@ export default function Task({
                         <ul className="nav nav-pills">
                             {[
                                 ['Description', true],
-                                ['Tests', stage >= STAGES.TESTING],
+                                ['Tests', !!tests],
                             ].map(([name, enabled], index) => (
                                 <li className="nav-item" key={index}>
                                     <a
@@ -66,26 +99,18 @@ export default function Task({
                     </div>
                     <div className="card-body overflow-auto p-0">
                         <div className="p-3" hidden={tab !== 0}>
-                            <h5 className="card-title">Algorithm Implementation</h5>
+                            <h5 className="card-title">{title}</h5>
                             <div>{description}</div>
-                        </div>{' '}
-                        {stage >= STAGES.TESTING && (
+                        </div>
+                        {tests !== null && (
                             <div hidden={tab !== 1}>
-                                {stage < STAGES.TESTING_AGAIN ? (
-                                    <Tests key={0} tests={tests} />
-                                ) : (
-                                    <Tests
-                                        key={1}
-                                        tests={[[true], [true], [true], [true], [true]]}
-                                        onComplete={() => {
-                                            const modal = new bootstrap.Modal(
-                                                document.getElementById('complete-dialog')
-                                            )
-                                            setCompleteModal(modal)
-                                            setTimeout(() => modal.show(), 1000)
-                                        }}
-                                    />
-                                )}
+                                <Tests
+                                    key={testsIndex}
+                                    tests={tests}
+                                    onComplete={tests.every(([success]) => success) || !step.next ? goToNextStep : null}
+                                    primaryButtonText={stepIndex === testsIndex ? step.next : null}
+                                    onPrimaryButtonClick={goToNextStep}
+                                />
                             </div>
                         )}
                     </div>
@@ -93,78 +118,66 @@ export default function Task({
             </div>
             <div className="col h-100 overflow-hidden d-flex flex-column">
                 <Chat
+                    key={messages}
                     className="h-50"
-                    messages={[description, response]}
+                    messages={messages}
                     onResponse={(chatStage) => {
                         if (chatStage === CHAT_STAGES.CODE_SENT) {
-                            setStage(STAGES.PASTING)
+                            goToNextStep()
                         }
                     }}
+                    primaryButtonText={step.text}
                 />
                 <div className="align-self-center my-2">
                     <button
                         type="button"
                         className="btn btn-primary btn-sm"
-                        disabled={stage !== STAGES.PASTING}
-                        onClick={() => {
-                            editorRef.current.setValue(chatGPTCode)
-                            setStage(STAGES.PASTED)
-                        }}
+                        disabled={step.type !== STEP_TYPES.PASTE}
+                        onClick={goToNextStep}
                     >
-                        <span className="me-2">Paste Code</span>
+                        <span className="me-2">{pasteButtonText}</span>
                         <i className="bi bi-arrow-down"></i>
                     </button>
                 </div>
                 <div className="card flex-grow-1">
                     <div className="card-header d-flex justify-content-between align-items-center">
                         Code
-                        {stage === STAGES.FIXING ? (
-                            <button
-                                type="button"
-                                className="btn btn-success btn-sm"
-                                onClick={() => {
-                                    setStage(STAGES.FIXED)
-                                }}
-                            >
+                        {step.type === STEP_TYPES.FIX ? (
+                            <button type="button" className="btn btn-success btn-sm" onClick={goToNextStep}>
                                 <i className="bi bi-check-lg me-1"></i>Approve Changes
                             </button>
                         ) : (
                             <button
                                 type="button"
                                 className="btn btn-success btn-sm"
-                                disabled={stage !== STAGES.PASTED && stage !== STAGES.FIXED}
+                                disabled={step.type !== STEP_TYPES.TEST || didTest}
                                 onClick={() => {
-                                    setStage(stage === STAGES.PASTED ? STAGES.TESTING : STAGES.TESTING_AGAIN)
                                     setTab(1)
+                                    setTestsIndex(stepIndex)
+                                    setTests(step.tests)
+                                    setDidTest(true)
                                 }}
                             >
                                 <i className="bi bi-play me-1"></i>Test
                             </button>
                         )}
                     </div>
-                    {stage === STAGES.FIXING ? (
+                    {step.type === STEP_TYPES.FIX ? (
                         <DiffEditor
                             className="pb-2"
-                            defaultLanguage="python"
-                            original={chatGPTCode}
-                            modified={correctCode}
-                            onMount={(editor, monaco) =>
-                                handleEditorDidMount(editor, monaco, () => editorRef.current.revealLine(40))
-                            }
+                            defaultLanguage={language}
+                            original={code}
+                            modified={step.value}
+                            onMount={handleEditorDidMount}
                             options={{ renderSideBySide: false, readOnly: true, fontSize: 12 }}
                         />
                     ) : (
                         <Editor
                             className="pb-2"
-                            defaultLanguage="python"
-                            defaultValue={stage === STAGES.FIXED ? correctCode : initialCode}
-                            onMount={
-                                stage === STAGES.FIXED
-                                    ? (editor, monaco) =>
-                                          handleEditorDidMount(editor, monaco, () => editorRef.current.revealLine(40))
-                                    : handleEditorDidMount
-                            }
-                            options={{ readOnly: stage >= STAGES.PASTED, fontSize: 12 }}
+                            defaultLanguage={language}
+                            defaultValue={code}
+                            onMount={handleEditorDidMount}
+                            options={{ readOnly: step.type !== STEP_TYPES.PROMPT, fontSize: 12 }}
                         />
                     )}
                 </div>
@@ -203,9 +216,7 @@ export default function Task({
                                 type="button"
                                 className="btn btn-primary"
                                 data-bs-dismiss="modal"
-                                onClick={() => {
-                                    setStage(STAGES.FIXING)
-                                }}
+                                onClick={goToNextStep}
                             >
                                 Understood
                             </button>
@@ -235,7 +246,7 @@ export default function Task({
                                 type="button"
                                 className="btn btn-primary"
                                 onClick={() => {
-                                    completeModal.hide()
+                                    bootstrap.Modal.getInstance(document.getElementById('complete-dialog')).hide()
                                     router.push('/')
                                 }}
                             >

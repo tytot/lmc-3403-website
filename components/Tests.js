@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
 import styles from './Tests.module.css'
 
-export default function Tests({ tests, onComplete }) {
+export default function Tests({ tests, onComplete, primaryButtonText, onPrimaryButtonClick }) {
     const [testsInProgress, setTestsInProgress] = useState(tests.map(() => true))
+    const [didPressPrimaryButton, setDidPressPrimaryButton] = useState(false)
 
     useEffect(() => {
         tests.forEach((_, index) =>
@@ -29,7 +30,7 @@ export default function Tests({ tests, onComplete }) {
                     const headingId = `flush-heading${index}`
                     const collapseId = `flush-collapse${index}`
                     return (
-                        <div className="accordion-item">
+                        <div className="accordion-item" key={index}>
                             <h2 className="accordion-header" id={headingId}>
                                 <button
                                     className={`accordion-button collapsed ${
@@ -56,7 +57,30 @@ export default function Tests({ tests, onComplete }) {
                                 aria-labelledby={headingId}
                                 data-bs-parent="#tests"
                             >
-                                <div className="accordion-body">{content}</div>
+                                <div className="accordion-body">
+                                    {
+                                        <div>
+                                            {content}
+                                            {!!primaryButtonText && (
+                                                <div className="mb-1 text-end">
+                                                    <button
+                                                        type="button"
+                                                        className="btn btn-danger"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#help-dialog"
+                                                        disabled={didPressPrimaryButton}
+                                                        onClick={() => {
+                                                            setDidPressPrimaryButton(true)
+                                                            onPrimaryButtonClick()
+                                                        }}
+                                                    >
+                                                        {primaryButtonText}
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    }
+                                </div>
                             </div>
                         </div>
                     )

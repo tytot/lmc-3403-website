@@ -8,25 +8,27 @@ export const CHAT_STAGES = {
     CODE_SENT: 3,
 }
 
-export default function Chat({ className, messages, onResponse }) {
+export default function Chat({ className, messages, onResponse, primaryButtonText }) {
     const body = useRef(null)
     const [stage, setStage] = useState(CHAT_STAGES.INITIAL)
+
+    console.log(messages.length)
 
     function effectiveMessages() {
         switch (stage) {
             case CHAT_STAGES.INITIAL:
-                return []
+                return messages.slice(0, messages.length - 2)
             case CHAT_STAGES.DESCRIPTION_SENT:
-                return [messages[0]]
+                return messages.slice(0, messages.length - 1)
             case CHAT_STAGES.CODE_SENDING:
                 return [
-                    messages[0],
+                    ...messages.slice(0, messages.length - 1),
                     <div className="spinner-border text-light mx-1 mt-1" role="status">
                         <span className="visually-hidden">Loading...</span>
                     </div>,
                 ]
             case CHAT_STAGES.CODE_SENT:
-                return messages.slice(0, 2)
+                return messages
         }
     }
 
@@ -41,23 +43,6 @@ export default function Chat({ className, messages, onResponse }) {
         <div className={`card ${className}`}>
             <div className="card-header">(Mock) ChatGPT</div>
             <div className="card-body overflow-auto" ref={body}>
-                {stage === CHAT_STAGES.INITIAL && (
-                    <button
-                        type="button"
-                        className="btn btn-primary float-end btn-sm"
-                        onClick={() => {
-                            setStage(CHAT_STAGES.DESCRIPTION_SENT)
-                            setTimeout(() => {
-                                setStage(CHAT_STAGES.CODE_SENDING)
-                            }, 1000)
-                            setTimeout(() => {
-                                setStage(CHAT_STAGES.CODE_SENT)
-                            }, 4000)
-                        }}
-                    >
-                        Send Description
-                    </button>
-                )}
                 {effectiveMessages().map((message, index) => {
                     const right = index % 2 === 0
                     return (
@@ -75,6 +60,23 @@ export default function Chat({ className, messages, onResponse }) {
                         </div>
                     )
                 })}
+                {stage === CHAT_STAGES.INITIAL && !!primaryButtonText && (
+                    <button
+                        type="button"
+                        className="btn btn-primary float-end btn-sm"
+                        onClick={() => {
+                            setStage(CHAT_STAGES.DESCRIPTION_SENT)
+                            setTimeout(() => {
+                                setStage(CHAT_STAGES.CODE_SENDING)
+                            }, 1000)
+                            setTimeout(() => {
+                                setStage(CHAT_STAGES.CODE_SENT)
+                            }, 4000)
+                        }}
+                    >
+                        {primaryButtonText}
+                    </button>
+                )}
             </div>
         </div>
     )
